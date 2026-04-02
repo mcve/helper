@@ -24,7 +24,7 @@ SYSTEM_PROMPT = """
 def ask_ai(text):
     # Используем новую модель gemini-2.0-flash (она быстрее и умнее старой pro)
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-1.5-flash",
         contents=f"{SYSTEM_PROMPT}\n\n{text}"
     )
     return response.text
