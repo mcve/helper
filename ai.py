@@ -1,7 +1,8 @@
 import os
 from google import genai
 
-# Получаем API ключ напрямую из переменных окружения Railway
+# Получаем API ключ из переменных окружения Railway
+# Убедись, что в панели Railway переменная называется именно GEMINI_API_KEY
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Инициализируем клиента
@@ -24,28 +25,31 @@ SYSTEM_PROMPT = """
 """
 
 def ask_ai(text):
+    if not text:
+        return "Я не получил текст для анализа."
+
     try:
-        # Используем стандартное имя модели gemini-1.5-flash
+        # Используем стандартную модель 1.5-flash (оптимально для лимитов)
         response = client.models.generate_content(
             model="gemini-1.5-flash",
             contents=f"{SYSTEM_PROMPT}\n\n{text}"
         )
         
-        # Проверяем, есть ли текст в ответе
         if response.text:
             return response.text
         else:
-            return "🤖 Модель не смогла сгенерировать ответ. Попробуй перефразировать."
+            return "🤖 Хм, не удалось сформулировать ответ. Попробуй еще раз."
 
     except Exception as e:
-        # Обработка лимитов (ошибка 429)
-        if "429" in str(e):
+        error_msg = str(e)
+        
+        # Обработка лимитов (429)
+        if "429" in error_msg:
             return "⚠️ Лимиты бесплатных запросов исчерпаны. Подожди 1 минуту."
         
-        # Обработка ошибки 404 (если модель не найдена)
-        elif "404" in str(e):
-            return "❌ Ошибка: модель gemini-1.5-flash не найдена. Проверь API ключ."
+        # Обработка заблокированного/неверного ключа (403/400) или модели (404)
+        elif "404" in error_msg or "403" in error_msg:
+            return "❌ Ошибка авторизации или модели. Проверь, что в Railway установлен НОВЫЙ API Key."
         
-        # Любая другая ошибка
         else:
-            return f"🤖 Произошла ошибка: {str(e)}"
+            return f"🤖 Произошла системная ошибка: {error_msg}"
