@@ -5,8 +5,9 @@ from aiogram import Bot, Dispatcher, types
 from ai import ask_ai
 from voice import transcribe
 
-TELEGRAM_TOKEN = os.getenv("8708658083:AAFqIT1gdmBRTaDDUl1eIjsLptIPiK8FWKA")
-GEMINI_API_KEY = os.getenv("AIzaSyDoEBOI4lNfVuaoPBjlG5mZfFfMPfEapuM")
+# ПРАВИЛЬНО: мы просим Python взять значение из переменной с конкретным именем
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher()
