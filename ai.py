@@ -1,32 +1,51 @@
 import os
 from google import genai
-# Если GEMINI_API_KEY прописан в переменных Railway, 
-# лучше брать его напрямую через os.getenv, чтобы не зависеть от config.py
+
+# Получаем API ключ напрямую из переменных окружения Railway
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
+# Инициализируем клиента
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 SYSTEM_PROMPT = """
 Ты мой ассистент.
-Контекст: 2 работы PM, ecommerce, мало времени.
-Задачи: давать фокус, помогать принимать решения, структурировать мысли.
+
+Контекст:
+— 2 работы PM
+— ecommerce
+— мало времени
+
+Задачи:
+— давать фокус
+— помогать принимать решения
+— структурировать мысли
+
 Отвечай кратко.
 """
 
 def ask_ai(text):
     try:
-        # Пробуем модель с суффиксом -latest, это самый стабильный вариант для v1beta
+        # Используем стандартное имя модели gemini-1.5-flash
         response = client.models.generate_content(
-            model="gemini-1.5-flash-latest", 
+            model="gemini-1.5-flash",
             contents=f"{SYSTEM_PROMPT}\n\n{text}"
         )
-        return response.text
+        
+        # Проверяем, есть ли текст в ответе
+        if response.text:
+            return response.text
+        else:
+            return "🤖 Модель не смогла сгенерировать ответ. Попробуй перефразировать."
+
     except Exception as e:
-        # Если это ошибка лимитов (429)
+        # Обработка лимитов (ошибка 429)
         if "429" in str(e):
-            return "⚠️ У меня закончились бесплатные запросы к Google. Подожди минуту и попробуй снова."
-        # Если модель всё еще не найдена (404)
+            return "⚠️ Лимиты бесплатных запросов исчерпаны. Подожди 1 минуту."
+        
+        # Обработка ошибки 404 (если модель не найдена)
         elif "404" in str(e):
-            return "❌ Ошибка: модель не найдена. Попробуй изменить имя модели в коде на 'gemini-1.5-flash'."
+            return "❌ Ошибка: модель gemini-1.5-flash не найдена. Проверь API ключ."
+        
+        # Любая другая ошибка
         else:
             return f"🤖 Произошла ошибка: {str(e)}"
