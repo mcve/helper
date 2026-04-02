@@ -1,40 +1,33 @@
 import os
 from openai import OpenAI
+from groq import Groq
 
-# Инициализируем клиента DeepSeek через протокол OpenAI
-client = OpenAI(
-    api_key=os.getenv("DEEPSEEK_API_KEY"),
-    base_url="https://api.deepseek.com"
-)
+# Клиенты
+ds_client = OpenAI(api_key=os.getenv("DEEPSEEK_API_KEY"), base_url="https://api.deepseek.com")
+groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-SYSTEM_PROMPT = """
-Ты — элитный PM-ассистент. 
-Контекст: Артем, 2 работы PM, e-commerce, дропшиппинг. 
-Твоя задача: давать четкий фокус, помогать с решениями по SDLC и маркетингу. 
-Отвечай максимально кратко, по делу, без "воды".
-"""
+def transcribe_voice(file_path):
+    try:
+        with open(file_path, "rb") as file:
+            # Whisper Large V3 на Groq — это топ скорость
+            transcription = groq_client.audio.transcriptions.create(
+                file=(file_path, file.read()),
+                model="whisper-large-v3",
+                response_format="text"
+            )
+        return transcription
+    except Exception as e:
+        return f"Ошибка Groq: {str(e)}"
 
 def ask_ai(text):
     try:
-        response = client.chat.completions.create(
+        response = ds_client.chat.completions.create(
             model="deepseek-chat",
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": text},
-            ],
-            stream=False
+                {"role": "system", "content": "Ты элитный PM-ассистент Артема. 2 работы, e-commerce. Отвечай кратко."},
+                {"role": "user", "content": text}
+            ]
         )
-        
-        if response.choices:
-            return response.choices[0].message.content
-        return "🤖 DeepSeek прислал пустой ответ."
-
+        return response.choices[0].message.content
     except Exception as e:
-        err_msg = str(e)
-        # Обработка типичных ошибок
-        if "balance" in err_msg.lower():
-            return "❌ На балансе DeepSeek закончились средства."
-        elif "429" in err_msg:
-            return "⏳ Лимиты DeepSeek. Попробуй через минуту."
-        
-        return f"🤖 Ошибка DeepSeek: {err_msg[:100]}"
+        return f"Ошибка DeepSeek: {str(e)}"
