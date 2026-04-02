@@ -1,0 +1,4 @@
+import os
+
+TELEGRAM_TOKEN = os.getenv("8708658083:AAFqIT1gdmBRTaDDUl1eIjsLptIPiK8FWKA")
+GEMINI_API_KEY = os.getenv("AIzaSyDoEBOI4lNfVuaoPBjlG5mZfFfMPfEapuM")
