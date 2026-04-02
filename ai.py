@@ -1,9 +1,9 @@
-import google.generativeai as genai
+import os
+from google import genai
 from config import GEMINI_API_KEY
 
-genai.configure(api_key=GEMINI_API_KEY)
-
-model = genai.GenerativeModel("gemini-pro")
+# Инициализируем клиента по новому стандарту
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 SYSTEM_PROMPT = """
 Ты мой ассистент.
@@ -22,6 +22,9 @@ SYSTEM_PROMPT = """
 """
 
 def ask_ai(text):
-    prompt = SYSTEM_PROMPT + "\n\n" + text
-    response = model.generate_content(prompt)
+    # Используем новую модель gemini-2.0-flash (она быстрее и умнее старой pro)
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=f"{SYSTEM_PROMPT}\n\n{text}"
+    )
     return response.text
