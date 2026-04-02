@@ -1,36 +1,40 @@
 import os
 import asyncio
 from aiogram import Bot, Dispatcher, types
+from aiogram.filters import Command # Добавили фильтр команд
 
 from ai import ask_ai
-from voice import transcribe
+# Пока закомментируй voice, если файл еще не готов, чтобы не было ошибок
+# from voice import transcribe 
 
-# ПРАВИЛЬНО: мы просим Python взять значение из переменной с конкретным именем
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
 bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher()
 
-# 📩 текст
+# 🚀 Команда /start
+@dp.message(Command("start"))
+async def cmd_start(message: types.Message):
+    await message.answer("Привет! Я твой PM-ассистент. Присылай мысли — я помогу их структурировать.")
+
+# 📩 Обработка любого текстового сообщения
 @dp.message()
 async def handle_text(message: types.Message):
-    answer = ask_ai(message.text)
-    await message.answer(answer)
+    if message.text:
+        # Показываем, что бот "печатает", чтобы ожидание не пугало
+        await bot.send_chat_action(message.chat.id, "typing")
+        
+        answer = ask_ai(message.text)
+        await message.answer(answer)
 
-# 🎤 голос
+# 🎤 Обработка голоса (убедись, что voice.py работает корректно)
 @dp.message(lambda message: message.voice)
 async def handle_voice(message: types.Message):
-    file = await bot.get_file(message.voice.file_id)
-    await bot.download_file(file.file_path, "voice.ogg")
-
-    text = transcribe("voice.ogg")
-
-    answer = ask_ai(text)
-
-    await message.answer(answer)
+    await message.answer("Секунду, слушаю твое сообщение...")
+    # Здесь твоя логика скачивания и транскрибации
+    # ...
 
 async def main():
+    print("Бот запущен и готов к работе!") # Увидишь это в логах Railway
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
