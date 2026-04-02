@@ -3,16 +3,24 @@ import assemblyai as aai
 from openai import OpenAI
 
 # Клиент для DeepSeek
-ds_client = OpenAI(api_key=os.getenv("DEEPSEEK_API_KEY"), base_url="https://api.deepseek.com")
+ds_client = OpenAI(
+    api_key=os.getenv("DEEPSEEK_API_KEY"), 
+    base_url="https://api.deepseek.com"
+)
 
 # Настройка AssemblyAI
 aai.settings.api_key = os.getenv("ASSEMBLYAI_API_KEY")
 
 def transcribe_voice(file_path):
     try:
+        # Конфигурация: указываем модели и автоопределение языка
+        config = aai.TranscriptionConfig(
+            speech_models=["universal-3-pro", "universal-2"],
+            language_detection=True
+        )
+        
         transcriber = aai.Transcriber()
-        # Отправляем файл на расшифровку
-        transcript = transcriber.transcribe(file_path)
+        transcript = transcriber.transcribe(file_path, config=config)
         
         if transcript.status == aai.TranscriptStatus.error:
             return f"Ошибка AssemblyAI: {transcript.error}"
@@ -22,12 +30,11 @@ def transcribe_voice(file_path):
         return f"Ошибка при обработке аудио: {str(e)}"
 
 def ask_ai(text):
-    # Твоя рабочая функция DeepSeek (без изменений)
     try:
         response = ds_client.chat.completions.create(
             model="deepseek-chat",
             messages=[
-                {"role": "system", "content": "Ты элитный PM-ассистент Артема. Отвечай кратко."},
+                {"role": "system", "content": "Ты элитный PM-ассистент Артема. 2 работы, e-commerce. Отвечай кратко."},
                 {"role": "user", "content": text}
             ]
         )
