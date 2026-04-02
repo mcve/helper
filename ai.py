@@ -1,32 +1,34 @@
 import os
 import google.generativeai as genai
 
-# Берем ключ из переменных Railway
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-# Настройка старого доброго SDK
 genai.configure(api_key=GEMINI_API_KEY)
 
-SYSTEM_PROMPT = """
-Ты мой ассистент.
-Контекст: 2 работы PM, ecommerce, мало времени.
-Задачи: давать фокус, помогать принимать решения, структурировать мысли.
-Отвечай кратко.
-"""
+# --- ДИАГНОСТИКА ---
+print("--- ПРОВЕРКА ДОСТУПНЫХ МОДЕЛЕЙ ---")
+try:
+    for m in genai.list_models():
+        if 'generateContent' in m.supported_generation_methods:
+            print(f"Доступна модель: {m.name}")
+except Exception as e:
+    print(f"Не удалось получить список моделей: {e}")
+print("---------------------------------")
+
+SYSTEM_PROMPT = "Ты PM-ассистент в e-commerce. Отвечай кратко и по делу."
 
 def ask_ai(text):
     try:
-        # В этой библиотеке это самая стабильная модель
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        
-        full_prompt = f"{SYSTEM_PROMPT}\n\nUser: {text}"
-        response = model.generate_content(full_prompt)
-        
+        # Пытаемся использовать 1.5-flash. Если упадет — попробуем gemini-pro (1.0)
+        try:
+            model = genai.GenerativeModel('gemini-1.5-flash')
+            response = model.generate_content(f"{SYSTEM_PROMPT}\n\n{text}")
+        except:
+            model = genai.GenerativeModel('gemini-pro')
+            response = model.generate_content(f"{SYSTEM_PROMPT}\n\n{text}")
+            
         return response.text
     except Exception as e:
         error_str = str(e)
         if "429" in error_str:
-            return "⚠️ Лимиты! Подожди минуту."
-        elif "403" in error_str or "400" in error_str:
-            return f"❌ Ошибка ключа. Проверь регион и API Key в Railway. Ошибка: {error_str[:50]}"
-        return f"🤖 Ошибка: {error_str}"
+            return "⚠️ Лимиты Google. Подожди минуту."
+        return f"🤖 Ошибка API: {error_str[:100]}"
