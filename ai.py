@@ -1,49 +1,40 @@
 import os
-import time
-from google import genai
+from openai import OpenAI
 
-# Достаем ключ из переменных Railway
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-# Инициализируем клиента (новый SDK)
-client = genai.Client(api_key=GEMINI_API_KEY)
+# Инициализируем клиента DeepSeek через протокол OpenAI
+client = OpenAI(
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
+    base_url="https://api.deepseek.com"
+)
 
 SYSTEM_PROMPT = """
-Ты мой ассистент.
-Контекст: 2 работы PM, ecommerce, мало времени.
-Задачи: давать фокус, помогать принимать решения, структурировать мысли.
-Отвечай кратко.
+Ты — элитный PM-ассистент. 
+Контекст: Артем, 2 работы PM, e-commerce, дропшиппинг. 
+Твоя задача: давать четкий фокус, помогать с решениями по SDLC и маркетингу. 
+Отвечай максимально кратко, по делу, без "воды".
 """
 
 def ask_ai(text):
-    max_retries = 3  # Максимум 3 попытки
-    retry_delay = 10  # Пауза 10 секунд между попытками
+    try:
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": text},
+            ],
+            stream=False
+        )
+        
+        if response.choices:
+            return response.choices[0].message.content
+        return "🤖 DeepSeek прислал пустой ответ."
 
-    for attempt in range(max_retries):
-        try:
-            # Используем 2.0-flash из твоего диагностического списка
-            response = client.models.generate_content(
-                model="gemini-2.0-flash", 
-                contents=f"{SYSTEM_PROMPT}\n\n{text}"
-            )
-            
-            if response.text:
-                return response.text
-            return "🤖 Модель вернула пустой ответ."
-
-        except Exception as e:
-            error_msg = str(e)
-            
-            # Если это ошибка лимитов (429) и у нас еще остались попытки
-            if "429" in error_msg and attempt < max_retries - 1:
-                print(f"Лимит достигнут. Попытка {attempt + 1} из {max_retries}. Жду {retry_delay} сек...")
-                time.sleep(retry_delay)
-                continue  # Идем на следующую итерацию цикла (повторный запрос)
-            
-            # Если попытки кончились или ошибка другая
-            if "429" in error_msg:
-                return "⏳ Все попытки исчерпаны. Google сильно перегружен, попробуй через пару минут."
-            
-            return f"🤖 Произошла ошибка: {error_msg[:100]}..."
-
-    return "🤖 Что-то пошло не так после всех попыток."
+    except Exception as e:
+        err_msg = str(e)
+        # Обработка типичных ошибок
+        if "balance" in err_msg.lower():
+            return "❌ На балансе DeepSeek закончились средства."
+        elif "429" in err_msg:
+            return "⏳ Лимиты DeepSeek. Попробуй через минуту."
+        
+        return f"🤖 Ошибка DeepSeek: {err_msg[:100]}"
