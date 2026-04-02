@@ -1,8 +1,12 @@
+import os
 import asyncio
 from aiogram import Bot, Dispatcher, types
-from config import TELEGRAM_TOKEN
+
 from ai import ask_ai
 from voice import transcribe
+
+TELEGRAM_TOKEN = os.getenv("8708658083:AAFqIT1gdmBRTaDDUl1eIjsLptIPiK8FWKA")
+GEMINI_API_KEY = os.getenv("AIzaSyDoEBOI4lNfVuaoPBjlG5mZfFfMPfEapuM")
 
 bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher()
